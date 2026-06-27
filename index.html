@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Live Voting — Heritage & Culture Night</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #0d0500; font-family: 'Arial Black', Arial, sans-serif; min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 20px 14px 40px; }
+  .header { text-align: center; margin-bottom: 24px; }
+  .header .sub { color: #F1C40F; font-size: 10px; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 6px; }
+  .header h1 { color: #fff; font-size: 22px; font-family: Georgia, serif; }
+  .header p { color: #E67E22; font-size: 13px; margin-top: 4px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; }
+
+  .tabs { display: flex; gap: 10px; margin-bottom: 24px; width: 100%; max-width: 420px; }
+  .tab { flex: 1; padding: 10px; border-radius: 8px; border: 2px solid #7a3c00; background: #1a0a00; color: #aaa; font-size: 13px; font-weight: bold; cursor: pointer; text-align: center; text-transform: uppercase; }
+  .tab.active { background: #C0392B; border-color: #C0392B; color: #fff; }
+
+  .countdown-wrap { text-align: center; margin-bottom: 20px; }
+  .countdown { font-size: 56px; font-weight: 900; color: #F1C40F; letter-spacing: 2px; }
+  .countdown.urgent { color: #C0392B; animation: pulse 0.5s infinite alternate; }
+  @keyframes pulse { from{opacity:1}to{opacity:0.4} }
+  .countdown-label { color: #aaa; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; margin-top: 4px; }
+
+  .voting-section { width: 100%; max-width: 420px; }
+  .category-title { color: #F1C40F; font-size: 14px; font-weight: bold; text-align: center; margin-bottom: 16px; letter-spacing: 1px; text-transform: uppercase; }
+
+  .candidates { display: flex; gap: 12px; margin-bottom: 16px; }
+  .candidate { flex: 1; background: #1a0a00; border: 2px solid #7a3c00; border-radius: 14px; padding: 16px 10px; text-align: center; cursor: pointer; transition: all 0.2s; }
+  .candidate:active { transform: scale(0.97); }
+  .candidate.voted { border-color: #F1C40F; background: #2a1500; }
+  .candidate.disabled { cursor: not-allowed; opacity: 0.6; pointer-events: none; }
+  .candidate.clickable:hover { border-color: #E67E22; transform: scale(1.02); }
+
+  .candidate-avatar { width: 64px; height: 64px; border-radius: 50%; margin: 0 auto 10px; display: flex; align-items: center; justify-content: center; }
+  .candidate-avatar svg { width: 40px; height: 40px; fill: #fff; }
+  .candidate-name { color: #fff; font-size: 15px; font-weight: 900; text-transform: uppercase; margin-bottom: 12px; line-height: 1.2; }
+
+  .bar-wrap { background: #2a1000; border-radius: 6px; height: 10px; overflow: hidden; margin-bottom: 6px; }
+  .bar { height: 100%; border-radius: 6px; background: linear-gradient(90deg,#C0392B,#E67E22); transition: width 0.5s; }
+  .bar.b { background: linear-gradient(90deg,#2980B9,#8E44AD); }
+  .percent { color: #F1C40F; font-size: 18px; font-weight: 900; }
+  .vote-count { color: #aaa; font-size: 11px; margin-top: 2px; }
+  .vs { display:flex;align-items:center;justify-content:center;color:#E67E22;font-size:20px;font-weight:900;flex-shrink:0;padding-top:28px; }
+
+  .status-msg { color: #F1C40F; text-align: center; font-size: 13px; margin-top: 10px; min-height: 18px; }
+
+  .waiting-msg { text-align:center; padding: 20px; color: #aaa; font-size: 13px; line-height: 1.6; }
+
+  .winner-banner { display:none; background:linear-gradient(135deg,#7a1e00,#C0392B,#E67E22); border-radius:14px; padding:28px 16px; text-align:center; margin-top:10px; animation:fadeIn 0.5s ease; }
+  @keyframes fadeIn{from{opacity:0;transform:scale(0.9)}to{opacity:1;transform:scale(1)}}
+  .winner-banner .crown { font-size:44px; margin-bottom:8px; }
+  .winner-banner .winner-label { color:#ffd580; font-size:12px; letter-spacing:3px; text-transform:uppercase; }
+  .winner-banner .winner-name { color:#fff; font-size:28px; font-weight:900; margin-top:8px; text-transform:uppercase; }
+  .winner-banner .winner-sub { color:#ffd580; font-size:13px; margin-top:6px; }
+
+  .live-dot { display:inline-block;width:8px;height:8px;background:#27AE60;border-radius:50%;margin-right:5px;animation:blink 1s infinite; }
+  @keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="sub">Class '28 · Iseyin Campus</div>
+  <h1>🏆 Live Voting</h1>
+  <p>An Evening of Heritage & Culture</p>
+</div>
+
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('male')">👑 Male</div>
+  <div class="tab" onclick="switchTab('female')">👸 Female</div>
+</div>
+
+<div class="countdown-wrap">
+  <div class="countdown" id="countdown">5:00</div>
+  <div class="countdown-label">Time Remaining</div>
+</div>
+
+<div class="voting-section">
+  <div class="category-title" id="cat-title">Best Dressed Male</div>
+
+  <div class="candidates">
+    <div class="candidate disabled" id="card-a" onclick="castVote('a')">
+      <div class="candidate-avatar" style="background:#C0392B"><svg viewBox="0 0 24 24"><path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/></svg></div>
+      <div class="candidate-name" id="name-a">JOEL</div>
+      <div class="bar-wrap"><div class="bar" id="bar-a" style="width:50%"></div></div>
+      <div class="percent" id="pct-a">50%</div>
+      <div class="vote-count" id="cnt-a">0 votes</div>
+    </div>
+    <div class="vs">VS</div>
+    <div class="candidate disabled" id="card-b" onclick="castVote('b')">
+      <div class="candidate-avatar" style="background:#2980B9"><svg viewBox="0 0 24 24"><path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/></svg></div>
+      <div class="candidate-name" id="name-b">JOSHUA</div>
+      <div class="bar-wrap"><div class="bar b" id="bar-b" style="width:50%"></div></div>
+      <div class="percent" id="pct-b">50%</div>
+      <div class="vote-count" id="cnt-b">0 votes</div>
+    </div>
+  </div>
+
+  <div class="status-msg" id="status-msg">⏳ Waiting for voting to start...</div>
+
+  <div class="winner-banner" id="winner-banner">
+    <div class="crown">👑</div>
+    <div class="winner-label">Winner</div>
+    <div class="winner-name" id="winner-name">—</div>
+    <div class="winner-sub" id="winner-sub"></div>
+  </div>
+</div>
+
+<script>
+const BIN_ID = "6a3fd4e2da38895dfe0785cc";
+const API_KEY = "$2a$10$jcQPYgLSdJANBJT39krzbeULRyXm8LdR6lziR/RxcZx5PPve8wAZm";
+const BASE_URL = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
+
+const config = {
+  male:   { title:"Best Dressed Male",   a:"JOEL",           b:"JOSHUA"  },
+  female: { title:"Best Dressed Female", a:"OLUWADALA SIMI", b:"FELICIA" }
+};
+
+let currentTab = "male";
+let pollInterval = null;
+let timerInterval = null;
+let timeLeft = 5 * 60;
+let votingActive = false;
+let votingEnded = false;
+let hasVoted = { male:false, female:false };
+let votes = { male:{a:0,b:0}, female:{a:0,b:0} };
+let lastStartedAt = null;
+
+async function fetchState() {
+  try {
+    const res = await fetch(BASE_URL + "/latest", { headers:{"X-Master-Key":API_KEY} });
+    const data = await res.json();
+    const rec = data.record;
+    votes = rec.votes;
+
+    if (rec.ended && !votingEnded) {
+      votingEnded = true;
+      votingActive = false;
+      clearInterval(timerInterval);
+      document.getElementById("countdown").textContent = "0:00";
+      disableCards();
+      showWinner();
+      return;
+    }
+
+    if (rec.active && !votingActive) {
+      // Voting just started — calculate remaining time from startedAt
+      votingActive = true;
+      votingEnded = false;
+      if (rec.startedAt) {
+        const elapsed = Math.floor((Date.now() - rec.startedAt) / 1000);
+        timeLeft = Math.max(0, (5 * 60) - elapsed);
+      } else {
+        timeLeft = 5 * 60;
+      }
+      lastStartedAt = rec.startedAt;
+      enableCards();
+      startLocalTimer();
+    }
+
+    if (!rec.active && !rec.ended) {
+      votingActive = false;
+      disableCards();
+      document.getElementById("winner-banner").style.display = "none";
+      document.getElementById("countdown").textContent = "5:00";
+      document.getElementById("countdown").className = "countdown";
+      clearInterval(timerInterval);
+      setStatus("⏳ Waiting for voting to start...");
+    }
+
+    updateUI();
+  } catch(e) {}
+}
+
+async function saveVotes() {
+  try {
+    const res = await fetch(BASE_URL + "/latest", { headers:{"X-Master-Key":API_KEY} });
+    const data = await res.json();
+    const rec = data.record;
+    rec.votes = votes;
+    await fetch(BASE_URL, {
+      method:"PUT",
+      headers:{"Content-Type":"application/json","X-Master-Key":API_KEY},
+      body: JSON.stringify(rec)
+    });
+  } catch(e) {}
+}
+
+function switchTab(tab) {
+  currentTab = tab;
+  document.querySelectorAll(".tab").forEach((t,i) => {
+    t.classList.toggle("active",(i===0&&tab==="male")||(i===1&&tab==="female"));
+  });
+  document.getElementById("cat-title").textContent = config[tab].title;
+  document.getElementById("name-a").textContent = config[tab].a;
+  document.getElementById("name-b").textContent = config[tab].b;
+  document.getElementById("winner-banner").style.display = "none";
+  updateUI();
+  refreshCardState();
+}
+
+async function castVote(side) {
+  if (!votingActive || votingEnded) return;
+  if (hasVoted[currentTab]) { setStatus("✅ You already voted!"); return; }
+
+  // Fetch latest votes first
+  try {
+    const res = await fetch(BASE_URL + "/latest", { headers:{"X-Master-Key":API_KEY} });
+    const data = await res.json();
+    votes = data.record.votes;
+  } catch(e) {}
+
+  votes[currentTab][side]++;
+  hasVoted[currentTab] = true;
+  await saveVotes();
+  updateUI();
+  setStatus("✅ Vote cast! 🔥");
+  document.getElementById("card-a").classList.toggle("voted", side==="a");
+  document.getElementById("card-b").classList.toggle("voted", side==="b");
+  refreshCardState();
+}
+
+function updateUI() {
+  const v = votes[currentTab];
+  const total = v.a + v.b;
+  const pctA = total===0?50:Math.round((v.a/total)*100);
+  const pctB = total===0?50:Math.round((v.b/total)*100);
+  document.getElementById("bar-a").style.width = pctA+"%";
+  document.getElementById("bar-b").style.width = pctB+"%";
+  document.getElementById("pct-a").textContent = pctA+"%";
+  document.getElementById("pct-b").textContent = pctB+"%";
+  document.getElementById("cnt-a").textContent = v.a+" vote"+(v.a!==1?"s":"");
+  document.getElementById("cnt-b").textContent = v.b+" vote"+(v.b!==1?"s":"");
+}
+
+function enableCards() {
+  setStatus('<span class="live-dot"></span> Voting is LIVE! Tap your favourite!');
+  refreshCardState();
+}
+
+function disableCards() {
+  document.getElementById("card-a").classList.add("disabled");
+  document.getElementById("card-b").classList.add("disabled");
+  document.getElementById("card-a").classList.remove("clickable");
+  document.getElementById("card-b").classList.remove("clickable");
+}
+
+function refreshCardState() {
+  if (votingActive && !votingEnded) {
+    const voted = hasVoted[currentTab];
+    document.getElementById("card-a").classList.toggle("disabled", voted);
+    document.getElementById("card-b").classList.toggle("disabled", voted);
+    document.getElementById("card-a").classList.toggle("clickable", !voted);
+    document.getElementById("card-b").classList.toggle("clickable", !voted);
+    if (!voted) {
+      document.getElementById("card-a").classList.remove("voted");
+      document.getElementById("card-b").classList.remove("voted");
+    }
+  } else {
+    disableCards();
+  }
+}
+
+function setStatus(msg) { document.getElementById("status-msg").innerHTML = msg; }
+
+function startLocalTimer() {
+  clearInterval(timerInterval);
+  timerInterval = setInterval(() => {
+    timeLeft--;
+    const m = Math.floor(timeLeft/60);
+    const s = timeLeft%60;
+    const el = document.getElementById("countdown");
+    el.textContent = `${m}:${s.toString().padStart(2,"0")}`;
+    el.className = "countdown"+(timeLeft<=30?" urgent":"");
+    if (timeLeft <= 0) {
+      clearInterval(timerInterval);
+      votingActive = false;
+      votingEnded = true;
+      disableCards();
+      document.getElementById("countdown").textContent = "0:00";
+      showWinner();
+    }
+  }, 1000);
+}
+
+function showWinner() {
+  const v = votes[currentTab];
+  const cfg = config[currentTab];
+  let winnerName, winnerSub;
+  if (v.a>v.b)      { winnerName=cfg.a; winnerSub=`${v.a} votes vs ${v.b} votes`; }
+  else if(v.b>v.a)  { winnerName=cfg.b; winnerSub=`${v.b} votes vs ${v.a} votes`; }
+  else               { winnerName="IT'S A TIE! 🤝"; winnerSub=`${v.a} votes each`; }
+  document.getElementById("winner-name").textContent = winnerName;
+  document.getElementById("winner-sub").textContent = winnerSub;
+  document.getElementById("winner-banner").style.display = "block";
+  setStatus("🏆 Voting closed! Winner announced!");
+}
+
+// Init
+fetchState();
+pollInterval = setInterval(fetchState, 2000);
+</script>
+</body>
+</html>
